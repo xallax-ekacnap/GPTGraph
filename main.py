@@ -1,6 +1,5 @@
-import streamlit as st
 import openai
-import netrc
+import streamlit as st
 import ast
 import pandas as pd
 
@@ -12,8 +11,19 @@ starting_prompt = """You are a helpful assistant. If you are asked to create a c
 if 'convo' not in st.session_state or st.session_state.convo == []:
     st.session_state.convo = [{"role": "system", "content": starting_prompt}]
 
-__, __, api_key = netrc.netrc().authenticators('openai')
-client = openai.OpenAI(api_key=api_key)
+graph_details = st.sidebar.container(height=700)
+with graph_details:
+    st.subheader("Graph Details")
+    st.text_area("Y-axis", height=68, placeholder="describe the y-axis...", key="y_axis")
+    st.text_area("X-axis", height=68, placeholder="describe the x-axis...", key="x_axis")
+    graph_type = st.selectbox("Graph Type", ["line", "bar", "area", "scatter"], key="graph_type")
+    prompt = st.text_area("Prompt", height=68, placeholder="describe the graph...")
+    st.button('Clear and Submit', on_click=lambda: st.session_state.convo.clear())
+    st.text_input('API Key', placeholder="Type your OpenAI API key...", key="api_key", type='password')
+
+
+# __, __, api_key = netrc.netrc().authenticators('openai') 
+client = openai.OpenAI(api_key=st.session_state.api_key)
 
 def askgpt():
     convo = st.session_state.convo
@@ -22,10 +32,16 @@ def askgpt():
         messages=convo
     )
     st.session_state.convo.append({"role": "assistant", "content": response.choices[0].message.content})
+    print(st.session_state.convo)
 
-def create_graph(message, messages):
+def create_graph():
+    for message in st.session_state.convo:
+        if message['role'] == 'assistant':
+            prompt = message['content']
+            break
+
     graph_type = st.session_state.graph_type
-    # messages = st.session_state.messages
+    messages = st.session_state.messages
     formatted_dict = ast.literal_eval(message['content'])
     df = pd.DataFrame(formatted_dict)
     if graph_type == "line":
@@ -39,26 +55,28 @@ def create_graph(message, messages):
 
 
 
-graph_details = st.sidebar.container(height=500)
 
-prompt = st.chat_input("Say something")
+
+# prompt = st.chat_input("Say something")
 messages = st.container(height=500, key="messages")
+st.session_state.messages = messages
 
-with graph_details:
-    st.subheader("Graph Details")
-    st.text_area("Y-axis", height=68, placeholder="describe the y-axis...")
-    st.text_area("X-axis", height=68, placeholder="describe the x-axis...")
-    graph_type = st.selectbox("Graph Type", ["line", "bar", "area", "scatter"], key="graph_type")
 
-if prompt:  
-    convo = st.session_state.convo
-    convo.append({"role": "user", "content": prompt})
-    askgpt()
-    print(st.session_state.convo)
+
+
+if prompt and st.session_state.api_key:  
+    prompt += " The user describes the x-axis as: " + st.session_state.x_axis + "." if st.session_state.x_axis else "The user does not describe the x-axis." 
+    prompt += " The user describes the y-axis as: " + st.session_state.y_axis + "." if st.session_state.y_axis else "The user does not describe the y-axis."
+    st.session_state.convo.append({"role": "user", "content": prompt})
+    try:
+        askgpt()
+    except openai.AuthenticationError as e:
+        print(e)
+    messages = st.session_state.messages
     for message in st.session_state.convo:
         if message['role'] == 'assistant':
             try:
-                create_graph(message, messages)
+                create_graph()
             except Exception as e:
                 print(e)
                 messages.chat_message("assistant").write(message['content'])
@@ -67,4 +85,4 @@ if prompt:
    #messages.chat_message("assistant").write(convo[-1]['content'])
     prompt = None
 
-st.button('Clear', on_click=lambda: st.session_state.convo.clear())
+

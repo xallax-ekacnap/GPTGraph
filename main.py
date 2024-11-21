@@ -12,15 +12,16 @@ starting_prompt = """You are a helpful assistant. If you are asked to create a c
 if 'convo' not in st.session_state or st.session_state.convo == []:
     st.session_state.convo = [{"role": "system", "content": starting_prompt}]
 
-def askgpt(convo, client):
-    print(convo)
+__, __, api_key = netrc.netrc().authenticators('openai')
+client = openai.OpenAI(api_key=api_key)
+
+def askgpt():
+    convo = st.session_state.convo
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=convo
     )
-
-    convo.append({'role': 'assistant', 'content': response.choices[0].message.content})
-    st.session_state.convo = convo
+    st.session_state.convo.append({"role": "assistant", "content": response.choices[0].message.content})
 
 def create_graph(message, messages):
     graph_type = st.session_state.graph_type
@@ -36,8 +37,7 @@ def create_graph(message, messages):
     elif graph_type == "bar":
         messages.chat_message("assistant").bar_chart(df, x=df.columns[0], y=df.columns[1])
 
-__, __, api_key = netrc.netrc().authenticators('openai')
-client = openai.OpenAI(api_key=api_key)
+
 
 graph_details = st.sidebar.container(height=500)
 
@@ -53,7 +53,7 @@ with graph_details:
 if prompt:  
     convo = st.session_state.convo
     convo.append({"role": "user", "content": prompt})
-    askgpt(convo, client)
+    askgpt()
     print(st.session_state.convo)
     for message in st.session_state.convo:
         if message['role'] == 'assistant':

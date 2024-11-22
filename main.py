@@ -3,9 +3,8 @@ import streamlit as st
 import ast
 import pandas as pd
 
-starting_prompt = """You are a helpful assistant. If you are asked to create a chart or graph, 
-                    use the format of a Pandas dataframe (e.g. {'x_axis': [1, 2], 'y_axis': [3, 4]}). 
-                    If this is the case, respond ONLY with the dataframe, with no other text, formatting, or explanation.
+starting_prompt = """You are a helpful assistant, specialized in creating graphs. ONLY use the format of a Pandas dataframe (e.g. {'x_axis': [1, 2], 'y_axis': [3, 4]}). 
+                    Respond ONLY with the dataframe, with no other text, formatting, or explanation.
                     Make sure to respond with only literal values, not an expression.
                     """
 if 'convo' not in st.session_state or st.session_state.convo == []:
@@ -58,7 +57,7 @@ def create_graph():
 
 
 # prompt = st.chat_input("Say something")
-messages = st.container(height=500, key="messages")
+messages = st.container(height=700, key="messages")
 st.session_state.messages = messages
 
 

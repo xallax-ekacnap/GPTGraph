@@ -16,7 +16,8 @@ with graph_details:
     st.text_area("Y-axis", height=68, placeholder="describe the y-axis...", key="y_axis")
     st.text_area("X-axis", height=68, placeholder="describe the x-axis...", key="x_axis")
     graph_type = st.selectbox("Graph Type", ["line", "bar", "area", "scatter"], key="graph_type")
-    prompt = st.text_area("Prompt", height=68, placeholder="describe the graph...")
+    prompt = st.text_area("Prompt", height=68, placeholder="describe the graph...", key="prompt")
+    st.text_area("Data (Optional)", height=68, placeholder="Enter the data here...", key="data")
     st.button('Clear and Submit', on_click=lambda: st.session_state.convo.clear())
     st.text_input('API Key', placeholder="Type your OpenAI API key...", key="api_key", type='password')
 
@@ -60,12 +61,11 @@ def create_graph():
 messages = st.container(height=700, key="messages")
 st.session_state.messages = messages
 
-
-
-
-if prompt and st.session_state.api_key:  
+if st.session_state.prompt and st.session_state.api_key:  
+    prompt = st.session_state.prompt
     prompt += " The user describes the x-axis as: " + st.session_state.x_axis + "." if st.session_state.x_axis else "The user does not describe the x-axis." 
     prompt += " The user describes the y-axis as: " + st.session_state.y_axis + "." if st.session_state.y_axis else "The user does not describe the y-axis."
+    prompt += " The provided data is as follows: " + st.session_state.data if st.session_state.data else "The user did not provide any data."
     st.session_state.convo.append({"role": "user", "content": prompt})
     try:
         askgpt()
